@@ -1,0 +1,5 @@
+{
+  "name": "Smart Sampa da Mulher",
+  "description": "Tecnologia, segurança e empoderamento feminino. Um sistema digital para ajudar mulheres e apoiar na busca de crianças.",
+  "requestFramePermissions": ["geolocation"]
+}

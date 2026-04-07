@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required) - Firebase Auth UID
+    //   - name: string (required) - Full name
+    //   - email: string (required) - Email address
+    //   - role: string (required) - 'user' or 'admin'
+    //   - createdAt: timestamp (optional)
+    //
+    // Collection: alerts
+    // Document ID: {alertId}
+    // Fields:
+    //   - uid: string (required) - User UID
+    //   - timestamp: timestamp (required)
+    //   - status: string (required) - 'active' or 'resolved'
+    //   - location: map (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'role']) &&
+             data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isValidEmail(data.email) &&
+             data.role == 'user'; // Users can only create themselves as 'user'
+    }
+
+    function isValidAlert(data) {
+      return data.keys().hasAll(['uid', 'timestamp', 'status']) &&
+             data.uid == request.auth.uid &&
+             data.timestamp is timestamp &&
+             data.status in ['active', 'resolved'];
+    }
+
+    function isValidPoliceReport(data) {
+      return data.keys().hasAll(['uid', 'type', 'status']) &&
+             data.uid == request.auth.uid &&
+             data.type in ['violencia', 'crianca_desaparecida'] &&
+             data.status in ['open', 'closed'];
+    }
+
+    function isValidBoletim(data) {
+      return data.keys().hasAll(['uid', 'personalData', 'reportData', 'status']) &&
+             data.uid == request.auth.uid &&
+             data.personalData is map &&
+             data.reportData is map &&
+             data.status in ['registered', 'under_review'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
+                      request.resource.data.role == resource.data.role;
+    }
+
+    match /alerts/{alertId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidAlert(request.resource.data);
+      allow update: if isDocOwner() && isValidAlert(request.resource.data);
+    }
+
+    match /police_reports/{reportId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidPoliceReport(request.resource.data);
+      allow update: if isDocOwner() && isValidPoliceReport(request.resource.data);
+    }
+
+    match /boletins/{boletimId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidBoletim(request.resource.data);
+      allow update: if isDocOwner() && isValidBoletim(request.resource.data);
+    }
+  }
+}

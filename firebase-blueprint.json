@@ -1,0 +1,111 @@
+{
+  "entities": {
+    "user": {
+      "title": "Usuária",
+      "description": "Informações de perfil da usuária do Smart Sampa da Mulher.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID único do Firebase Auth" },
+        "name": { "type": "string", "description": "Nome completo" },
+        "email": { "type": "string", "format": "email", "description": "Endereço de e-mail" },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "Papel no sistema" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "emergency_alert": {
+      "title": "Alerta de Emergência",
+      "description": "Registros de acionamento do botão de pânico.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID da usuária que acionou" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Momento do acionamento" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "latitude": { "type": "number" },
+            "longitude": { "type": "number" }
+          }
+        },
+        "status": { "type": "string", "enum": ["active", "resolved"], "description": "Status do alerta" }
+      },
+      "required": ["uid", "timestamp", "status"]
+    },
+    "police_report": {
+      "title": "Denúncia Polícia Civil",
+      "description": "Chat de denúncia em tempo real com a Polícia Civil.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID da usuária" },
+        "type": { "type": "string", "enum": ["violencia", "crianca_desaparecida"], "description": "Tipo de denúncia" },
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sender": { "type": "string" },
+              "text": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" },
+              "location": {
+                "type": "object",
+                "properties": {
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "status": { "type": "string", "enum": ["open", "closed"] }
+      },
+      "required": ["uid", "type", "status"]
+    },
+    "boletim": {
+      "title": "Boletim de Ocorrência",
+      "description": "Formulário completo de Boletim de Ocorrência digital.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "personalData": {
+          "type": "object",
+          "properties": {
+            "fullName": { "type": "string" },
+            "cpf": { "type": "string" },
+            "phone": { "type": "string" },
+            "address": { "type": "string" }
+          }
+        },
+        "reportData": {
+          "type": "object",
+          "properties": {
+            "incidentType": { "type": "string" },
+            "dateTime": { "type": "string" },
+            "description": { "type": "string" },
+            "location": { "type": "string" }
+          }
+        },
+        "status": { "type": "string", "enum": ["registered", "under_review"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "personalData", "reportData", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user",
+      "description": "Dados privados da usuária."
+    },
+    "/alerts/{alertId}": {
+      "schema": "emergency_alert",
+      "description": "Alertas de emergência enviados."
+    },
+    "/police_reports/{reportId}": {
+      "schema": "police_report",
+      "description": "Chats de denúncia com a polícia."
+    },
+    "/boletins/{boletimId}": {
+      "schema": "boletim",
+      "description": "Boletins de ocorrência registrados."
+    }
+  }
+}
